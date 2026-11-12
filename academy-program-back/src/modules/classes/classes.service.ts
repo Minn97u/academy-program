@@ -29,23 +29,24 @@ export class ClassesService {
   async create(dto: CreateClassDto) {
     await this.assertTeacher(dto.teacherId);
     if (!dto.days.length) throw new BadRequestException('수업 요일을 하나 이상 선택하세요.');
-    const c = await this.prisma.classRoom.create({
+    // 쓰기에 include를 붙이지 않고 다시 읽는다 (students.service 참고).
+    const { id } = await this.prisma.classRoom.create({
       data: { ...dto, days: [...dto.days].sort(), description: dto.description ?? '' },
-      include: classInclude,
+      select: { id: true },
     });
-    return this.toResponse(c);
+    return this.findOne(id);
   }
 
   async update(id: number, dto: UpdateClassDto) {
     await this.findOne(id);
     if (dto.teacherId !== undefined) await this.assertTeacher(dto.teacherId);
     if (dto.days && !dto.days.length) throw new BadRequestException('수업 요일을 하나 이상 선택하세요.');
-    const c = await this.prisma.classRoom.update({
+    await this.prisma.classRoom.update({
       where: { id },
       data: { ...dto, days: dto.days ? [...dto.days].sort() : undefined },
-      include: classInclude,
+      select: { id: true },
     });
-    return this.toResponse(c);
+    return this.findOne(id);
   }
 
   async remove(id: number) {

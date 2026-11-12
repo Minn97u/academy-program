@@ -40,7 +40,14 @@ export class ExamsService {
       where: { id },
       include: {
         ...examInclude,
-        class: { select: { id: true, name: true, _count: { select: { students: true } }, students: { orderBy: { name: 'asc' } } } },
+        class: {
+          select: {
+            id: true,
+            name: true,
+            _count: { select: { students: true } },
+            students: { orderBy: { name: 'asc' } },
+          },
+        },
         results: true,
       },
     });
@@ -53,7 +60,9 @@ export class ExamsService {
         return {
           id: s.id,
           name: s.name,
-          result: r ? { status: r.status, score: r.score, wrongNumbers: r.wrongNumbers, updatedAt: r.updatedAt.toISOString() } : null,
+          result: r
+            ? { status: r.status, score: r.score, wrongNumbers: r.wrongNumbers, updatedAt: r.updatedAt.toISOString() }
+            : null,
         };
       }),
     };
@@ -61,21 +70,27 @@ export class ExamsService {
 
   async create(dto: CreateExamDto) {
     await this.assertClass(dto.classId);
-    const e = await this.prisma.exam.create({
+    // 쓰기에 include를 붙이지 않고 다시 읽는다 (students.service 참고).
+    const { id } = await this.prisma.exam.create({
       data: { ...dto, date: toDate(dto.date) },
-      include: examInclude,
+      select: { id: true },
     });
-    return this.toRow(e);
+    return this.row(id);
   }
 
   async update(id: number, dto: UpdateExamDto) {
     await this.exists(id);
     if (dto.classId !== undefined) await this.assertClass(dto.classId);
-    const e = await this.prisma.exam.update({
+    await this.prisma.exam.update({
       where: { id },
       data: { ...dto, date: dto.date ? toDate(dto.date) : undefined },
-      include: examInclude,
+      select: { id: true },
     });
+    return this.row(id);
+  }
+
+  private async row(id: number) {
+    const e = await this.prisma.exam.findUniqueOrThrow({ where: { id }, include: examInclude });
     return this.toRow(e);
   }
 
@@ -86,17 +101,23 @@ export class ExamsService {
   }
 
   async upsertResult(examId: number, studentId: number, dto: UpsertResultDto) {
-    const exam = await this.prisma.exam.findUnique({ where: { id: examId }, select: { total: true, questionCount: true, classId: true } });
+    const exam = await this.prisma.exam.findUnique({
+      where: { id: examId },
+      select: { total: true, questionCount: true, classId: true },
+    });
     if (!exam) throw new NotFoundException('시험을 찾을 수 없습니다.');
     const student = await this.prisma.student.findUnique({ where: { id: studentId }, select: { classId: true } });
-    if (!student || student.classId !== exam.classId) throw new BadRequestException('이 시험의 응시 대상 학생이 아닙니다.');
+    if (!student || student.classId !== exam.classId)
+      throw new BadRequestException('이 시험의 응시 대상 학생이 아닙니다.');
 
     const absent = dto.status === 'ABSENT';
     const score = absent ? null : dto.score;
     const wrongNumbers = absent ? [] : (dto.wrongNumbers ?? []);
     if (!absent && score == null) throw new BadRequestException('점수를 입력하세요.');
-    if (score != null && score > exam.total) throw new BadRequestException(`점수는 총점 ${exam.total}점을 넘을 수 없습니다.`);
-    if (wrongNumbers.some((n) => n > exam.questionCount)) throw new BadRequestException(`문항 번호는 1~${exam.questionCount} 사이여야 합니다.`);
+    if (score != null && score > exam.total)
+      throw new BadRequestException(`점수는 총점 ${exam.total}점을 넘을 수 없습니다.`);
+    if (wrongNumbers.some((n) => n > exam.questionCount))
+      throw new BadRequestException(`문항 번호는 1~${exam.questionCount} 사이여야 합니다.`);
 
     const r = await this.prisma.examResult.upsert({
       where: { examId_studentId: { examId, studentId } },

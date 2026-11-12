@@ -61,7 +61,11 @@ export class StudentsService {
     if (!s) throw new NotFoundException('학생을 찾을 수 없습니다.');
     const { results, attendances, notes, ...base } = s;
     return {
-      ...this.toRow({ ...base, results: results.map((r) => ({ score: r.score, exam: { date: r.exam.date } })), attendances }),
+      ...this.toRow({
+        ...base,
+        results: results.map((r) => ({ score: r.score, exam: { date: r.exam.date } })),
+        attendances,
+      }),
       records: results.map((r) => ({
         examId: r.examId,
         name: r.exam.name,
@@ -80,7 +84,7 @@ export class StudentsService {
 
   async create(dto: CreateStudentDto) {
     await this.assertClass(dto.classId);
-    const s = await this.prisma.student.create({
+    const { id } = await this.prisma.student.create({
       data: {
         name: dto.name,
         grade: dto.grade,
@@ -89,19 +93,25 @@ export class StudentsService {
         memo: dto.memo ?? '',
         enrolledAt: dto.enrolledAt ? toDate(dto.enrolledAt) : undefined,
       },
-      include: listInclude,
+      select: { id: true },
     });
-    return this.toRow(s);
+    return this.row(id);
   }
 
   async update(id: number, dto: UpdateStudentDto) {
     await this.exists(id);
     await this.assertClass(dto.classId);
-    const s = await this.prisma.student.update({
+    await this.prisma.student.update({
       where: { id },
       data: { ...dto, enrolledAt: dto.enrolledAt ? toDate(dto.enrolledAt) : undefined },
-      include: listInclude,
+      select: { id: true },
     });
+    return this.row(id);
+  }
+
+  /** 쓰기 후 목록 행 모양으로 다시 읽는다. 쓰기에 include를 붙이면 Prisma가 트랜잭션 커넥션 하나에 관계 조회를 동시에 내보내 pg 경고가 난다. */
+  private async row(id: number) {
+    const s = await this.prisma.student.findUniqueOrThrow({ where: { id }, include: listInclude });
     return this.toRow(s);
   }
 

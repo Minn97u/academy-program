@@ -1,14 +1,7 @@
 /**
  * 전역 예외 필터. 응답을 `{ success:false, message, statusCode }`로 통일한다.
  */
-import {
-  ArgumentsHost,
-  Catch,
-  ExceptionFilter,
-  HttpException,
-  HttpStatus,
-  Logger,
-} from '@nestjs/common';
+import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { Request, Response } from 'express';
 
 @Catch()
@@ -24,9 +17,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       const status = exception.getStatus();
       const body = exception.getResponse();
       const message =
-        typeof body === 'string'
-          ? body
-          : ((body as Record<string, unknown>).message ?? exception.message);
+        typeof body === 'string' ? body : ((body as Record<string, unknown>).message ?? exception.message);
       response.status(status).json({ success: false, message, statusCode: status });
       return;
     }

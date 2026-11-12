@@ -5,12 +5,60 @@ import { PrismaClient } from '@prisma/client';
 const TEACHERS = ['김지원', '박서준', '이하늘'];
 
 const CLASSES = [
-  { name: '중1 기본 A반', grade: '중1', teacher: 1, days: [1, 3, 5], start: '16:00', end: '17:30', description: '중1 2학기 도형 단원 기본 개념 완성' },
-  { name: '중2 심화 A반', grade: '중2', teacher: 0, days: [1, 3, 5], start: '17:00', end: '18:30', description: '일차함수 응용과 도형 증명 심화 학습' },
-  { name: '중2 기본 B반', grade: '중2', teacher: 0, days: [2, 4], start: '17:00', end: '18:50', description: '중2 핵심 개념 다지기와 내신 기본 문제' },
-  { name: '중3 내신 대비반', grade: '중3', teacher: 0, days: [2, 4], start: '19:00', end: '21:00', description: '2학기 내신 삼각비와 원의 성질 집중 대비' },
-  { name: '고1 공통수학 A반', grade: '고1', teacher: 0, days: [1, 3], start: '19:00', end: '21:30', description: '공통수학2 도형의 방정식과 집합과 명제' },
-  { name: '고2 수학Ⅰ 심화반', grade: '고2', teacher: 2, days: [2, 4], start: '19:30', end: '22:00', description: '삼각함수와 수열 심화 및 모의고사 대비' },
+  {
+    name: '중1 기본 A반',
+    grade: '중1',
+    teacher: 1,
+    days: [1, 3, 5],
+    start: '16:00',
+    end: '17:30',
+    description: '중1 2학기 도형 단원 기본 개념 완성',
+  },
+  {
+    name: '중2 심화 A반',
+    grade: '중2',
+    teacher: 0,
+    days: [1, 3, 5],
+    start: '17:00',
+    end: '18:30',
+    description: '일차함수 응용과 도형 증명 심화 학습',
+  },
+  {
+    name: '중2 기본 B반',
+    grade: '중2',
+    teacher: 0,
+    days: [2, 4],
+    start: '17:00',
+    end: '18:50',
+    description: '중2 핵심 개념 다지기와 내신 기본 문제',
+  },
+  {
+    name: '중3 내신 대비반',
+    grade: '중3',
+    teacher: 0,
+    days: [2, 4],
+    start: '19:00',
+    end: '21:00',
+    description: '2학기 내신 삼각비와 원의 성질 집중 대비',
+  },
+  {
+    name: '고1 공통수학 A반',
+    grade: '고1',
+    teacher: 0,
+    days: [1, 3],
+    start: '19:00',
+    end: '21:30',
+    description: '공통수학2 도형의 방정식과 집합과 명제',
+  },
+  {
+    name: '고2 수학Ⅰ 심화반',
+    grade: '고2',
+    teacher: 2,
+    days: [2, 4],
+    start: '19:30',
+    end: '22:00',
+    description: '삼각함수와 수열 심화 및 모의고사 대비',
+  },
 ];
 
 const STUDENTS: string[][] = [
@@ -73,14 +121,27 @@ async function main() {
       }
       for (const [ei, e] of EXAMS.entries()) {
         const exam = await db.exam.create({
-          data: { name: e.name, type: 'ACADEMY', classId: room.id, date: new Date(e.date), total: 100, questionCount: 20 },
+          data: {
+            name: e.name,
+            type: 'ACADEMY',
+            classId: room.id,
+            date: new Date(e.date),
+            total: 100,
+            questionCount: 20,
+          },
         });
         // 첫 시험만 결과를 채워 "분석 완료/입력 중" 상태가 보이게 한다.
         if (ei === 0) {
           for (const [si, s] of students.entries()) {
             const wrong = [3, 7, 12, 18].filter((q) => (q + si) % 3 !== 0);
             await db.examResult.create({
-              data: { examId: exam.id, studentId: s.id, status: 'DONE', score: 100 - wrong.length * 5 - (si % 4) * 3, wrongNumbers: wrong },
+              data: {
+                examId: exam.id,
+                studentId: s.id,
+                status: 'DONE',
+                score: 100 - wrong.length * 5 - (si % 4) * 3,
+                wrongNumbers: wrong,
+              },
             });
           }
         }

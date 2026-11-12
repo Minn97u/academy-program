@@ -1,14 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  ParseIntPipe,
-  Patch,
-  Post,
-  Query,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { CreateStudentDto } from './dto/create-student.dto';
@@ -59,10 +49,7 @@ export class StudentsController {
 
   @Delete(':id/notes/:noteId')
   @ApiOperation({ summary: '메모 삭제' })
-  removeNote(
-    @Param('id', ParseIntPipe) id: number,
-    @Param('noteId', ParseIntPipe) noteId: number,
-  ) {
+  removeNote(@Param('id', ParseIntPipe) id: number, @Param('noteId', ParseIntPipe) noteId: number) {
     return this.students.removeNote(id, noteId);
   }
 }

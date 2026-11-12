@@ -1,15 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  ParseIntPipe,
-  Patch,
-  Post,
-  Put,
-  Query,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Put, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CreateExamDto } from './dto/create-exam.dto';
 import { ListExamsDto } from './dto/list-exams.dto';
@@ -64,10 +53,7 @@ export class ExamsController {
 
   @Delete(':id/results/:studentId')
   @ApiOperation({ summary: '학생 결과 삭제 (미입력 상태로 되돌림)' })
-  removeResult(
-    @Param('id', ParseIntPipe) id: number,
-    @Param('studentId', ParseIntPipe) studentId: number,
-  ) {
+  removeResult(@Param('id', ParseIntPipe) id: number, @Param('studentId', ParseIntPipe) studentId: number) {
     return this.exams.removeResult(id, studentId);
   }
 }

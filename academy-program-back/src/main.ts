@@ -28,9 +28,7 @@ async function bootstrap() {
       transform: true,
       exceptionFactory: (errors) => {
         const first = errors[0];
-        const message = first?.constraints
-          ? Object.values(first.constraints)[0]
-          : '입력값이 올바르지 않습니다.';
+        const message = first?.constraints ? Object.values(first.constraints)[0] : '입력값이 올바르지 않습니다.';
         return new BadRequestException(message);
       },
     }),
