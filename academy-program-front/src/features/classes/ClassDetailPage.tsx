@@ -244,7 +244,7 @@ export function ClassDetailPage({ id }: { id: number }) {
       )}
       {modal === "student" && (
         <StudentFormModal
-          defaultClassId={c.id}
+          defaultClass={{ id: c.id, grade: c.grade }}
           onClose={() => setModal(null)}
           onSaved={(s) => {
             setModal(null);

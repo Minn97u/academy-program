@@ -8,15 +8,15 @@ import type { Student, StudentInput } from "@/shared/types/models";
 import { Chips } from "@/shared/ui/controls";
 import { Modal } from "@/shared/ui/Modal";
 
-/** 학생 등록·수정 모달. initial이 있으면 수정, defaultClassId는 반 상세에서 열 때 미리 선택. */
+/** 학생 등록·수정 모달. initial이 있으면 수정, defaultClass는 반 상세에서 열 때 미리 선택. */
 export function StudentFormModal({
   initial,
-  defaultClassId,
+  defaultClass,
   onClose,
   onSaved,
 }: {
   initial?: Student;
-  defaultClassId?: number;
+  defaultClass?: { id: number; grade: string };
   onClose: () => void;
   onSaved: (s: Student) => void;
 }) {
@@ -24,16 +24,12 @@ export function StudentFormModal({
   const [form, setForm] = useState<StudentInput>(
     initial
       ? { name: initial.name, grade: initial.grade, classId: initial.classId, phone: initial.phone, memo: initial.memo }
-      : { name: "", grade: "중2", classId: defaultClassId ?? null, phone: "", memo: "" },
+      : { name: "", grade: defaultClass?.grade ?? "중2", classId: defaultClass?.id ?? null, phone: "", memo: "" },
   );
   const [err, setErr] = useState("");
   const [saving, setSaving] = useState(false);
   const set = <K extends keyof StudentInput>(k: K, v: StudentInput[K]) => setForm((f) => ({ ...f, [k]: v }));
   const classOptions = (classes.data ?? []).filter((c) => c.grade === form.grade);
-
-  // 반 상세에서 열었는데 학년이 다르면, 그 반의 학년으로 맞춘다.
-  const picked = classes.data?.find((c) => c.id === defaultClassId);
-  if (picked && !initial && form.grade !== picked.grade && form.classId === picked.id) set("grade", picked.grade);
 
   const save = async () => {
     if (!form.name.trim()) return setErr("학생 이름을 입력하세요.");
