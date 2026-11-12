@@ -1,0 +1,19 @@
+# 로컬 개발용 PostgreSQL. 다른 프로젝트 DB(5432~5435)와 겹치지 않게 5436을 쓴다.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: academy
+      POSTGRES_PASSWORD: academy
+      POSTGRES_DB: academy
+    ports:
+      - '5436:5432'
+    volumes:
+      - academy-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U academy']
+      interval: 2s
+      retries: 30
+
+volumes:
+  academy-db:

@@ -1,0 +1,12 @@
+# 의존성·빌드
+node_modules/
+dist/
+*.tsbuildinfo
+
+# 환경 변수
+.env*
+!.env.example
+
+# 기타
+.DS_Store
+*.log

@@ -1,0 +1,143 @@
+// 학원 프로그램 DB 스키마. 선생님 → 정규반 → 학생 → 시험 결과/출결/메모 순으로 이어진다.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// 학원 공통 설정. 로그인 전까지는 한 줄(id=1)만 쓴다.
+model Setting {
+  id          Int     @id @default(1)
+  academyName String  @map("academy_name")
+  teacherId   Int     @map("teacher_id")
+  teacher     Teacher @relation(fields: [teacherId], references: [id])
+
+  @@map("settings")
+}
+
+model Teacher {
+  id        Int       @id @default(autoincrement())
+  name      String
+  classes   ClassRoom[]
+  settings  Setting[]
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@map("teachers")
+}
+
+/// 정규반. days는 수업 요일(0=일 … 6=토), 시간은 "HH:mm".
+model ClassRoom {
+  id          Int          @id @default(autoincrement())
+  name        String
+  grade       String
+  teacherId   Int          @map("teacher_id")
+  teacher     Teacher      @relation(fields: [teacherId], references: [id])
+  days        Int[]
+  startTime   String       @map("start_time")
+  endTime     String       @map("end_time")
+  description String       @default("")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  students    Student[]
+  exams       Exam[]
+  attendances Attendance[]
+
+  @@map("class_rooms")
+}
+
+model Student {
+  id          Int          @id @default(autoincrement())
+  name        String
+  grade       String
+  classId     Int?         @map("class_id")
+  class       ClassRoom?   @relation(fields: [classId], references: [id], onDelete: SetNull)
+  phone       String       @default("")
+  memo        String       @default("")
+  enrolledAt  DateTime     @default(now()) @map("enrolled_at") @db.Date
+  createdAt   DateTime     @default(now()) @map("created_at")
+  results     ExamResult[]
+  attendances Attendance[]
+  notes       StudentNote[]
+
+  @@map("students")
+}
+
+enum ExamType {
+  ACADEMY
+  SCHOOL
+  MOCK
+  ETC
+}
+
+model Exam {
+  id            Int          @id @default(autoincrement())
+  name          String
+  type          ExamType     @default(ACADEMY)
+  classId       Int          @map("class_id")
+  class         ClassRoom    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  date          DateTime     @db.Date
+  total         Int          @default(100)
+  questionCount Int          @default(20) @map("question_count")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  results       ExamResult[]
+
+  @@map("exams")
+}
+
+enum ResultStatus {
+  DONE
+  ABSENT
+}
+
+/// 학생별 시험 결과. 미응시(ABSENT)는 점수가 없다.
+model ExamResult {
+  id           Int          @id @default(autoincrement())
+  examId       Int          @map("exam_id")
+  exam         Exam         @relation(fields: [examId], references: [id], onDelete: Cascade)
+  studentId    Int          @map("student_id")
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  status       ResultStatus @default(DONE)
+  score        Int?
+  wrongNumbers Int[]        @map("wrong_numbers")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  @@unique([examId, studentId])
+  @@map("exam_results")
+}
+
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  ABSENT
+}
+
+model Attendance {
+  id        Int              @id @default(autoincrement())
+  classId   Int              @map("class_id")
+  class     ClassRoom        @relation(fields: [classId], references: [id], onDelete: Cascade)
+  studentId Int              @map("student_id")
+  student   Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  date      DateTime         @db.Date
+  status    AttendanceStatus
+  memo      String           @default("")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+
+  @@unique([studentId, date])
+  @@index([classId, date])
+  @@map("attendances")
+}
+
+/// 상담·학습·학부모 연락 메모.
+model StudentNote {
+  id        Int      @id @default(autoincrement())
+  studentId Int      @map("student_id")
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  kind      String
+  text      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("student_notes")
+}
