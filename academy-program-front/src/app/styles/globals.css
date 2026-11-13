@@ -171,7 +171,7 @@ button.tr:hover, a.tr:hover { background: var(--c-bg); }
 .tr.sel { background: var(--c-primary-subtle); box-shadow: inset 2px 0 0 var(--c-primary); }
 .c-home-ex { grid-template-columns: minmax(170px, 2fr) 1.3fr .7fr .6fr .7fr 1.1fr; min-width: 700px; }
 .c-cls { grid-template-columns: minmax(160px, 1.8fr) .6fr .9fr .6fr 1.6fr .9fr 1fr; min-width: 860px; }
-.c-stu { grid-template-columns: minmax(150px, 1.5fr) .6fr 1.3fr .8fr .8fr .7fr 1fr; min-width: 860px; }
+.c-stu { grid-template-columns: minmax(150px, 1.5fr) .6fr 1.3fr .8fr .8fr 1.1fr .7fr .9fr; min-width: 980px; }
 .c-cstu { grid-template-columns: minmax(140px, 1.5fr) .8fr .8fr .8fr 1fr; min-width: 600px; }
 .c-cex { grid-template-columns: minmax(180px, 2fr) 1.1fr .8fr .7fr .7fr 1.1fr; min-width: 760px; }
 .c-sex { grid-template-columns: minmax(170px, 2fr) 1fr .8fr .7fr .8fr .8fr 1.1fr; min-width: 860px; }
