@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { PageHead } from "@/features/shell/PageHead";
-import { api } from "@/shared/api";
+import { PageHead } from "@/shared/ui/PageHead";
+import { api, errorMessage } from "@/shared/api";
 import { DOW, addMonths, dot, monthCells, monthLabel } from "@/shared/lib/date";
 import { ATT_LABEL, EXAM_TYPES, NOTE_KINDS, delta, dirCls, initial, pct, resultStatus, score, signed } from "@/shared/lib/format";
 import { useQuery } from "@/shared/lib/use-query";
@@ -33,23 +33,37 @@ export function StudentDetailPage({ id }: { id: number }) {
   const calMonth = addMonths(today.slice(0, 7), calOffset);
 
   const d = delta(s.scores);
+  // recentScore는 응시한 시험 기준이므로, 시험명도 미응시 기록을 건너뛴 최근 응시 시험에서 가져온다.
+  const recentExam = s.records.find((r) => r.status === "DONE" && r.score != null);
   const attByDate = new Map(s.attendanceRecords.map((a) => [a.date, a]));
 
   const saveNote = async () => {
     if (!note.text.trim()) return;
-    await api.students.addNote(id, { kind: note.kind, text: note.text.trim() });
-    setNote({ ...note, text: "" });
-    toast("메모를 저장했어요");
-    reload();
+    try {
+      await api.students.addNote(id, { kind: note.kind, text: note.text.trim() });
+      setNote({ ...note, text: "" });
+      toast("메모를 저장했어요");
+      reload();
+    } catch (e) {
+      toast(errorMessage(e, "메모를 저장하지 못했어요"));
+    }
   };
   const removeNote = async (noteId: number) => {
-    await api.students.removeNote(id, noteId);
+    try {
+      await api.students.removeNote(id, noteId);
+    } catch (e) {
+      toast(errorMessage(e, "메모를 삭제하지 못했어요"));
+    }
     reload();
   };
   const remove = async () => {
-    await api.students.remove(id);
-    toast(`'${s.name}' 학생을 삭제했어요`);
-    router.push("/students");
+    try {
+      await api.students.remove(id);
+      toast(`'${s.name}' 학생을 삭제했어요`);
+      router.push("/students");
+    } catch (e) {
+      toast(errorMessage(e, "삭제에 실패했어요"));
+    }
   };
 
   return (
@@ -92,7 +106,7 @@ export function StudentDetailPage({ id }: { id: number }) {
           <div className="meta">
             <span className="meta-l">최근 시험 점수</span>
             <span className="meta-v num">{score(s.recentScore)}</span>
-            <span className="xs muted ell">{s.records[0]?.name ?? "응시 기록 없음"}</span>
+            <span className="xs muted ell">{recentExam?.name ?? "응시 기록 없음"}</span>
           </div>
           <div className="meta">
             <span className="meta-l">평균 점수</span>

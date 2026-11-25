@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { PageHead } from "@/features/shell/PageHead";
-import { api, ApiError } from "@/shared/api";
+import { PageHead } from "@/shared/ui/PageHead";
+import { api, errorMessage } from "@/shared/api";
 import { dot } from "@/shared/lib/date";
 import { EXAM_TYPES, examStatus, resultStatus, score } from "@/shared/lib/format";
 import { useQuery } from "@/shared/lib/use-query";
@@ -32,9 +32,13 @@ export function ExamDetailPage({ id }: { id: number }) {
 
   const st = examStatus(exam);
   const remove = async () => {
-    await api.exams.remove(id);
-    toast(`'${exam.name}' 시험을 삭제했어요`);
-    router.push("/exams");
+    try {
+      await api.exams.remove(id);
+      toast(`'${exam.name}' 시험을 삭제했어요`);
+      router.push("/exams");
+    } catch (e) {
+      toast(errorMessage(e, "삭제에 실패했어요"));
+    }
   };
 
   return (
@@ -167,7 +171,7 @@ function Entry({ exam, onSaved }: { exam: ExamDetail; onSaved: () => void }) {
         </div>
       </section>
 
-      {/* 학생이나 저장된 결과가 바뀜뱴 key가 바뀌어 입력창이 초기화된다. */}
+      {/* 학생이나 저장된 결과가 바뀌면 key가 바뀌어 입력창이 초기화된다. */}
       <Editor
         key={`${cur.id}:${cur.result?.updatedAt ?? ""}`}
         exam={exam}
@@ -214,19 +218,25 @@ function Editor({
     const n = Number(draft.score);
     if (!draft.absent && (draft.score === "" || !Number.isFinite(n))) return setErr("점수를 입력하세요.");
     if (!draft.absent && (n < 0 || n > exam.total)) return setErr(`점수는 0~${exam.total}점 사이여야 합니다.`);
+    // 직접 입력란은 blur 때만 draft.wrong에 반영되므로, Enter로 바로 저장할 때를 위해 입력란 값을 기준으로 삼는다.
+    const wrongNumbers = parseWrong(wrongText, exam.questionCount);
     try {
-      await api.exams.saveResult(exam.id, cur.id, draft.absent ? { status: "ABSENT" } : { status: "DONE", score: n, wrongNumbers: draft.wrong });
+      await api.exams.saveResult(exam.id, cur.id, draft.absent ? { status: "ABSENT" } : { status: "DONE", score: n, wrongNumbers });
       toast(`${cur.name} 결과를 저장했어요`);
       onSaved();
       if (next && pos < last) onMove(pos + 1);
     } catch (e) {
-      setErr(e instanceof ApiError ? e.message : "저장에 실패했어요");
+      setErr(errorMessage(e, "저장에 실패했어요"));
     }
   };
   const clear = async () => {
     if (!saved) return;
-    await api.exams.removeResult(exam.id, cur.id);
-    toast("입력을 지웠어요");
+    try {
+      await api.exams.removeResult(exam.id, cur.id);
+      toast("입력을 지웠어요");
+    } catch (e) {
+      toast(errorMessage(e, "입력을 지우지 못했어요"));
+    }
     onSaved();
   };
   const onKey = (e: React.KeyboardEvent) => e.key === "Enter" && save(true);

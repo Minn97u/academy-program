@@ -3,9 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense, useState } from "react";
-import { api } from "@/shared/api";
 import { fullDate } from "@/shared/lib/date";
-import { useQuery } from "@/shared/lib/use-query";
+import { SettingsProvider, useSettings } from "@/shared/lib/settings";
 import { useHour, useToday } from "@/shared/lib/use-today";
 import { Icon, type IconName } from "@/shared/ui/Icon";
 import { ToastProvider } from "@/shared/ui/toast";
@@ -50,9 +49,17 @@ function NavLink(props: NavLinkProps) {
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  return (
+    <SettingsProvider>
+      <Shell>{children}</Shell>
+    </SettingsProvider>
+  );
+}
+
+function Shell({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { data: settings } = useQuery(() => api.settings.get(), []);
+  const { data: settings } = useSettings();
   const todayStr = useToday();
   const hour = useHour();
   const teacher = settings?.teacher.name ?? "선생님";

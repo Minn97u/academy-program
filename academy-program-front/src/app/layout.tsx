@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AppShell } from "@/features/shell/AppShell";
-import "./styles/globals.css";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Academy Program",

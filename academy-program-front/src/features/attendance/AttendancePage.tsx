@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { PageHead } from "@/features/shell/PageHead";
-import { api, ApiError } from "@/shared/api";
+import { PageHead } from "@/shared/ui/PageHead";
+import { api, errorMessage } from "@/shared/api";
 import { DOW, addDays, addMonths, fullDate, monthCells, monthLabel } from "@/shared/lib/date";
 import { ATT_LABEL } from "@/shared/lib/format";
 import { useQuery } from "@/shared/lib/use-query";
@@ -33,7 +33,8 @@ function Board({ today }: { today: string }) {
   const sheets = useQuery(() => api.attendance.byDate(date, classId || undefined), [date, classId]);
   const cal = useQuery(() => api.attendance.calendar(calMonth, classId || undefined), [calMonth, classId]);
 
-  const rows = (sheets.data ?? []).flatMap((sh) => sh.students.map((s) => ({ ...s, classId: sh.classId, className: sh.className })));
+  // 날짜·반을 바꾼 직후에는 이전 출석부가 남아 있으므로, 새 출석부가 올 때까지 행을 비워 둔다.
+  const rows = (sheets.stale ? [] : (sheets.data ?? [])).flatMap((sh) => sh.students.map((s) => ({ ...s, classId: sh.classId, className: sh.className })));
   const count = (st: AttendanceStatus) => rows.filter((r) => r.status === st).length;
   const unchecked = rows.filter((r) => !r.status).length;
   const calCount = new Map((cal.data ?? []).map((c) => [c.date, c.count]));
@@ -45,18 +46,25 @@ function Board({ today }: { today: string }) {
       sheets.reload();
       cal.reload();
     } catch (e) {
-      toast(e instanceof ApiError ? e.message : "저장에 실패했어요");
+      toast(errorMessage(e, "저장에 실패했어요"));
     }
   };
   const clear = async (r: (typeof rows)[number]) => {
-    await api.attendance.remove(r.id, date);
+    try {
+      await api.attendance.remove(r.id, date);
+    } catch (e) {
+      toast(errorMessage(e, "체크를 해제하지 못했어요"));
+    }
     sheets.reload();
     cal.reload();
   };
   const allPresent = async () => {
     const targets = rows.filter((r) => !r.status);
-    await Promise.all(targets.map((r) => api.attendance.save({ classId: r.classId, studentId: r.id, date, status: "PRESENT", memo: r.memo })));
-    toast(`${targets.length}명을 출석으로 체크했어요`);
+    const results = await Promise.allSettled(
+      targets.map((r) => api.attendance.save({ classId: r.classId, studentId: r.id, date, status: "PRESENT", memo: r.memo })),
+    );
+    const failed = results.filter((x) => x.status === "rejected").length;
+    toast(failed ? `${targets.length - failed}명 체크, ${failed}명은 저장하지 못했어요` : `${targets.length}명을 출석으로 체크했어요`);
     sheets.reload();
     cal.reload();
   };
@@ -129,7 +137,7 @@ function Board({ today }: { today: string }) {
             </div>
             {sheets.loading && <Loading />}
             {rows.map((r) => (
-              <div key={`${r.classId}-${r.id}`} className="tr c-att">
+              <div key={`${date}-${r.classId}-${r.id}`} className="tr c-att">
                 <Link href={`/students/${r.id}`} className="b">
                   {r.name}
                 </Link>
@@ -158,7 +166,7 @@ function Board({ today }: { today: string }) {
                 />
               </div>
             ))}
-            {sheets.data && rows.length === 0 && (
+            {sheets.data && !sheets.stale && rows.length === 0 && (
               <div className="empty">
                 <p className="empty-t">이 날짜에 예정된 수업이 없어요</p>
                 <p className="small muted">다른 날짜나 정규반을 선택해 보세요.</p>

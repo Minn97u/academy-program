@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PageHead } from "@/features/shell/PageHead";
+import { PageHead } from "@/shared/ui/PageHead";
 import { api } from "@/shared/api";
 import { GRADES } from "@/shared/lib/format";
 import { useQuery } from "@/shared/lib/use-query";
@@ -24,6 +24,11 @@ export function StudentsPage() {
     (s) => (!q.trim() || s.name.includes(q.trim())) && (grade === "all" || s.grade === grade) && (!classId || s.classId === classId),
   );
   const hasFilter = !!q || grade !== "all" || classId !== 0;
+  // 학년을 바꾸면 그 학년에 없는 반 필터는 함께 푼다.
+  const pickGrade = (g: string) => {
+    setGrade(g);
+    if (g !== "all" && classes.data?.find((c) => c.id === classId)?.grade !== g) setClassId(0);
+  };
   const reset = () => {
     setQ("");
     setGrade("all");
@@ -40,7 +45,7 @@ export function StudentsPage() {
           </span>
           <input className="inp" style={{ paddingLeft: 36 }} placeholder="학생 이름 검색" value={q} onChange={(e) => setQ(e.target.value)} aria-label="학생 이름 검색" />
         </div>
-        <Dropdown value={grade} onChange={setGrade} options={[{ value: "all", label: "학년 전체" }, ...GRADES.map((g) => ({ value: g, label: g }))]} />
+        <Dropdown value={grade} onChange={pickGrade} options={[{ value: "all", label: "학년 전체" }, ...GRADES.map((g) => ({ value: g, label: g }))]} />
         <Dropdown
           value={classId}
           onChange={setClassId}
