@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { AttendanceStatus, Prisma } from '@prisma/client';
-import { toDate, toDateString } from '../../common/lib/date';
+import { toDate, toDateString, todayKst } from '../../common/lib/date';
+import { avg } from '../../common/lib/math';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { CreateStudentDto } from './dto/create-student.dto';
@@ -15,11 +16,7 @@ const listInclude = {
 
 type StudentRow = Prisma.StudentGetPayload<{ include: typeof listInclude }>;
 
-function avg(nums: number[]) {
-  return nums.length ? Math.round((nums.reduce((a, b) => a + b, 0) / nums.length) * 10) / 10 : null;
-}
-
-export function attendanceSummary(rows: { status: AttendanceStatus }[]) {
+function attendanceSummary(rows: { status: AttendanceStatus }[]) {
   const count = (s: AttendanceStatus) => rows.filter((r) => r.status === s).length;
   const present = count('PRESENT');
   const late = count('LATE');
@@ -91,7 +88,7 @@ export class StudentsService {
         classId: dto.classId ?? null,
         phone: dto.phone ?? '',
         memo: dto.memo ?? '',
-        enrolledAt: dto.enrolledAt ? toDate(dto.enrolledAt) : undefined,
+        enrolledAt: dto.enrolledAt ? toDate(dto.enrolledAt) : todayKst(),
       },
       select: { id: true },
     });
@@ -109,12 +106,6 @@ export class StudentsService {
     return this.row(id);
   }
 
-  /** 쓰기 후 목록 행 모양으로 다시 읽는다. 쓰기에 include를 붙이면 Prisma가 트랜잭션 커넥션 하나에 관계 조회를 동시에 내보내 pg 경고가 난다. */
-  private async row(id: number) {
-    const s = await this.prisma.student.findUniqueOrThrow({ where: { id }, include: listInclude });
-    return this.toRow(s);
-  }
-
   async remove(id: number) {
     await this.exists(id);
     await this.prisma.student.delete({ where: { id } });
@@ -124,7 +115,7 @@ export class StudentsService {
   async addNote(studentId: number, dto: CreateNoteDto) {
     await this.exists(studentId);
     const n = await this.prisma.studentNote.create({
-      data: { studentId, kind: dto.kind, text: dto.text, date: dto.date ? toDate(dto.date) : new Date() },
+      data: { studentId, kind: dto.kind, text: dto.text, date: dto.date ? toDate(dto.date) : todayKst() },
     });
     return { id: n.id, date: toDateString(n.date), kind: n.kind, text: n.text };
   }
@@ -134,6 +125,12 @@ export class StudentsService {
     if (!n) throw new NotFoundException('메모를 찾을 수 없습니다.');
     await this.prisma.studentNote.delete({ where: { id: noteId } });
     return { deleted: true };
+  }
+
+  /** 쓰기 후 목록 행 모양으로 다시 읽는다. 쓰기에 include를 붙이면 Prisma가 트랜잭션 커넥션 하나에 관계 조회를 동시에 내보내 pg 경고가 난다. */
+  private async row(id: number) {
+    const s = await this.prisma.student.findUniqueOrThrow({ where: { id }, include: listInclude });
+    return this.toRow(s);
   }
 
   private async exists(id: number) {

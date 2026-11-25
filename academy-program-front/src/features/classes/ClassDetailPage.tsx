@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { PageHead } from "@/features/shell/PageHead";
+import { PageHead } from "@/shared/ui/PageHead";
 import { StudentFormModal } from "@/features/students/StudentFormModal";
 import { StudentRow } from "@/features/students/StudentRow";
-import { api } from "@/shared/api";
+import { api, errorMessage } from "@/shared/api";
 import { dot, scheduleLabel } from "@/shared/lib/date";
 import { EXAM_TYPES, examStatus, pct, score } from "@/shared/lib/format";
 import { useQuery } from "@/shared/lib/use-query";
@@ -37,9 +37,13 @@ export function ClassDetailPage({ id }: { id: number }) {
   const attRate = attTotal ? Math.round(((att.present + att.late) / attTotal) * 100) : null;
 
   const remove = async () => {
-    await api.classes.remove(id);
-    toast(`'${c.name}' 반을 삭제했어요`);
-    router.push("/classes");
+    try {
+      await api.classes.remove(id);
+      toast(`'${c.name}' 반을 삭제했어요`);
+      router.push("/classes");
+    } catch (e) {
+      toast(errorMessage(e, "삭제에 실패했어요"));
+    }
   };
 
   return (

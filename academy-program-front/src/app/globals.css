@@ -109,7 +109,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
 .g { display: grid; gap: 20px; }
 .g-4 { grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); }
 .g-3 { grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); }
-.g-2 { grid-template-columns: repeat(auto-fit, minmax(min(400px, 100%), 1fr)); }
 .g-main { grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); }
 .g-main2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); }
 .meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr)); border-top: 1px solid var(--c-line); margin-top: 20px; }
@@ -118,7 +117,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
 .meta-v { font-size: 20px; font-weight: 600; letter-spacing: -.01em; }
 .meta-v.sm { font-size: 15px; font-weight: 600; padding-top: 5px; }
 .meta-row { display: flex; flex-wrap: wrap; gap: 2px 12px; }
-.nt { display: block; margin-bottom: 2px; }
 .delta { font-weight: 500; font-size: 12.5px; }
 .up { color: var(--c-success); } .down { color: var(--c-error); } .flat { color: var(--c-text-2); }
 
@@ -152,7 +150,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
 /* ===== 입력 요소 ===== */
 .inp { height: 40px; border: 1px solid var(--c-border); border-radius: 8px; padding: 0 12px; background: #fff; width: 100%; outline: none; transition: border-color .15s, box-shadow .15s; }
 .inp:focus { border-color: var(--c-primary); box-shadow: 0 0 0 3px rgba(249,115,22,.12); }
-.inp.bad { border-color: #ef4444; }
 .inp[disabled] { background: var(--c-bg); color: var(--c-text-3); }
 textarea.inp { height: auto; padding: 10px 12px; min-height: 96px; resize: vertical; line-height: 1.6; }
 .lab { font-size: 12.5px; font-weight: 500; color: #44403c; margin-bottom: 6px; display: block; }
@@ -213,11 +210,7 @@ button.tr:hover, a.tr:hover { background: var(--c-bg); }
 /* ===== 안내 · 빈 상태 ===== */
 .notice { display: flex; gap: 12px; align-items: flex-start; padding: 13px 16px; border-radius: 12px; font-size: 13px; line-height: 1.6; }
 .notice .ic { margin-top: 2px; color: var(--c-text-2); }
-.n-warn { background: #fffbeb; color: #713f12; border: 1px solid #fdecc0; }
-.n-warn .ic { color: var(--c-warning); }
 .n-info { background: #f3f8ff; color: #1e3a8a; border: 1px solid #dbeafe; }
-.n-ok { background: #f2fcf5; color: #14532d; border: 1px solid #d4f5df; }
-.n-ok .ic { color: var(--c-success); }
 .empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 40px 20px; }
 .empty-t { font-size: 15px; font-weight: 600; }
 .err-box { padding: 14px 16px; border-radius: 12px; background: #fff; border: 1px solid var(--c-border); color: var(--c-error); font-size: 13px; }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { PageHead } from "@/features/shell/PageHead";
+import { PageHead } from "@/shared/ui/PageHead";
 import { api } from "@/shared/api";
 import { dayOfWeek, dot, fullDate } from "@/shared/lib/date";
 import { examStatus, score } from "@/shared/lib/format";

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { PageHead } from "@/features/shell/PageHead";
+import { PageHead } from "@/shared/ui/PageHead";
 import { api } from "@/shared/api";
 import { scheduleLabel } from "@/shared/lib/date";
 import { useQuery } from "@/shared/lib/use-query";

@@ -1,8 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { AttendanceStatus } from '@prisma/client';
 import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
-import { IsDateOnly } from '../../../common/validators/is-date-string';
+import { IsEnum, IsInt, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsDateOnly, IsMonthOnly } from '../../../common/validators/date';
 
 export class ListAttendanceDto {
   @ApiProperty({ example: '2026-11-10' })
@@ -18,7 +18,7 @@ export class ListAttendanceDto {
 
 export class CalendarAttendanceDto {
   @ApiProperty({ example: '2026-11' })
-  @Matches(/^\d{4}-\d{2}$/, { message: '월은 YYYY-MM 형식으로 입력하세요.' })
+  @IsMonthOnly()
   month: string;
 
   @ApiPropertyOptional()

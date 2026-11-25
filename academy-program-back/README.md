@@ -18,7 +18,7 @@ pnpm start:dev        # http://localhost:4200/api, Swagger http://localhost:4200
 ```
 src/
   main.ts                  CORS, /api prefix, ValidationPipe, Swagger
-  common/                  filters(예외), interceptors(응답 래핑), validators, lib/date
+  common/                  filters(예외), interceptors(응답 래핑), validators(날짜·월), lib(date, math)
   prisma/                  PrismaService
   modules/
     settings/   GET, PATCH /settings

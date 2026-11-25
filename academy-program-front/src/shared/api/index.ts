@@ -7,7 +7,6 @@ import type {
   ExamDetail,
   ExamInput,
   ExamResult,
-  ExamType,
   ResultStatus,
   Settings,
   Student,
@@ -18,7 +17,7 @@ import type {
 } from "@/shared/types/models";
 import { qs, request } from "./client";
 
-export { ApiError } from "./client";
+export { ApiError, errorMessage } from "./client";
 
 export const api = {
   settings: {
@@ -34,7 +33,7 @@ export const api = {
     remove: (id: number) => request<{ deleted: true }>("DELETE", `/classes/${id}`),
   },
   students: {
-    list: (f: { q?: string; grade?: string; classId?: number } = {}) => request<Student[]>("GET", `/students${qs(f)}`),
+    list: (f: { classId?: number } = {}) => request<Student[]>("GET", `/students${qs(f)}`),
     get: (id: number) => request<StudentDetail>("GET", `/students/${id}`),
     create: (input: StudentInput) => request<Student>("POST", "/students", input),
     update: (id: number, input: Partial<StudentInput>) => request<Student>("PATCH", `/students/${id}`, input),
@@ -43,10 +42,9 @@ export const api = {
     removeNote: (id: number, noteId: number) => request<{ deleted: true }>("DELETE", `/students/${id}/notes/${noteId}`),
   },
   exams: {
-    list: (f: { type?: ExamType; classId?: number; month?: string } = {}) => request<Exam[]>("GET", `/exams${qs(f)}`),
+    list: (f: { classId?: number } = {}) => request<Exam[]>("GET", `/exams${qs(f)}`),
     get: (id: number) => request<ExamDetail>("GET", `/exams/${id}`),
     create: (input: ExamInput) => request<Exam>("POST", "/exams", input),
-    update: (id: number, input: Partial<ExamInput>) => request<Exam>("PATCH", `/exams/${id}`, input),
     remove: (id: number) => request<{ deleted: true }>("DELETE", `/exams/${id}`),
     saveResult: (examId: number, studentId: number, input: { status: ResultStatus; score?: number; wrongNumbers?: number[] }) =>
       request<ExamResult>("PUT", `/exams/${examId}/results/${studentId}`, input),

@@ -1,18 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { PageHead } from "@/features/shell/PageHead";
+import { PageHead } from "@/shared/ui/PageHead";
 import { api, ApiError } from "@/shared/api";
-import { useQuery } from "@/shared/lib/use-query";
+import { useSettings } from "@/shared/lib/settings";
 import type { Settings } from "@/shared/types/models";
 import { ErrorBox, Loading } from "@/shared/ui/controls";
 import { useToast } from "@/shared/ui/toast";
 
 export function SettingsPage() {
-  const { data, error, reload } = useQuery(() => api.settings.get(), []);
+  const { data, error, reload } = useSettings();
   if (error) return <ErrorBox message={error} />;
   if (!data) return <Loading />;
-  // 저장된 값이 바뀜 때마다 폼을 다시 초기화한다.
+  // 저장된 값이 바뀔 때마다 폼을 다시 초기화한다.
   return <SettingsForm key={`${data.teacher.name}|${data.academyName}`} data={data} onSaved={reload} />;
 }
 

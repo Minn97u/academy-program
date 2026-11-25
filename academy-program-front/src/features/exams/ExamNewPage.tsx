@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { PageHead } from "@/features/shell/PageHead";
+import { PageHead } from "@/shared/ui/PageHead";
 import { api, ApiError } from "@/shared/api";
 import { dot } from "@/shared/lib/date";
 import { EXAM_TYPES } from "@/shared/lib/format";

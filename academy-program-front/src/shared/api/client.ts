@@ -8,6 +8,9 @@ export class ApiError extends Error {
   }
 }
 
+/** 사용자에게 보여줄 오류 문구. 서버가 보낸 메시지가 없으면 fallback을 쓴다. */
+export const errorMessage = (e: unknown, fallback: string) => (e instanceof ApiError ? e.message : fallback);
+
 type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 export async function request<T>(method: Method, path: string, body?: unknown): Promise<T> {

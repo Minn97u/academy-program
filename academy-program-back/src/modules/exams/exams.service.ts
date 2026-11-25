@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { toDate, toDateString } from '../../common/lib/date';
+import { monthRange, toDate, toDateString } from '../../common/lib/date';
+import { avg } from '../../common/lib/math';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateExamDto } from './dto/create-exam.dto';
 import { ListExamsDto } from './dto/list-exams.dto';
@@ -8,14 +9,20 @@ import { UpdateExamDto } from './dto/update-exam.dto';
 import { UpsertResultDto } from './dto/upsert-result.dto';
 
 const examInclude = {
-  class: { select: { id: true, name: true, _count: { select: { students: true } } } },
-  results: { select: { status: true, score: true } },
+  class: { select: { id: true, name: true, students: { select: { id: true, enrolledAt: true } } } },
+  results: { select: { studentId: true, status: true, score: true } },
 } satisfies Prisma.ExamInclude;
 
 type ExamRow = Prisma.ExamGetPayload<{ include: typeof examInclude }>;
 
-function avg(nums: number[]) {
-  return nums.length ? Math.round((nums.reduce((a, b) => a + b, 0) / nums.length) * 10) / 10 : null;
+/**
+ * 응시 대상 학생 id. 시험일까지 등록된 현재 반 학생에, 이미 결과가 있는 학생을 더한다.
+ * 반을 옮기거나 반에서 빠진 학생의 과거 성적은 그 시험(이전 반)에 그대로 남는다.
+ */
+function participantIds(e: ExamRow) {
+  const ids = new Set(e.results.map((r) => r.studentId));
+  for (const s of e.class.students) if (s.enrolledAt <= e.date) ids.add(s.id);
+  return ids;
 }
 
 @Injectable()
@@ -27,7 +34,7 @@ export class ExamsService {
       where: {
         type: query.type,
         classId: query.classId,
-        date: query.month ? { gte: toDate(`${query.month}-01`), lt: nextMonth(query.month) } : undefined,
+        date: query.month ? monthRange(query.month) : undefined,
       },
       include: examInclude,
       orderBy: [{ date: 'desc' }, { id: 'desc' }],
@@ -39,32 +46,31 @@ export class ExamsService {
     const e = await this.prisma.exam.findUnique({
       where: { id },
       include: {
-        ...examInclude,
-        class: {
-          select: {
-            id: true,
-            name: true,
-            _count: { select: { students: true } },
-            students: { orderBy: { name: 'asc' } },
-          },
-        },
-        results: true,
+        class: { select: { id: true, name: true, students: { select: { id: true, name: true, enrolledAt: true } } } },
+        results: { include: { student: { select: { name: true } } } },
       },
     });
     if (!e) throw new NotFoundException('시험을 찾을 수 없습니다.');
+    const ids = participantIds(e);
     const byStudent = new Map(e.results.map((r) => [r.studentId, r]));
+    const names = new Map([
+      ...e.results.map((r) => [r.studentId, r.student.name] as const),
+      ...e.class.students.map((s) => [s.id, s.name] as const),
+    ]);
     return {
       ...this.toRow(e),
-      students: e.class.students.map((s) => {
-        const r = byStudent.get(s.id);
-        return {
-          id: s.id,
-          name: s.name,
-          result: r
-            ? { status: r.status, score: r.score, wrongNumbers: r.wrongNumbers, updatedAt: r.updatedAt.toISOString() }
-            : null,
-        };
-      }),
+      students: [...ids]
+        .map((id) => {
+          const r = byStudent.get(id);
+          return {
+            id,
+            name: names.get(id) ?? '',
+            result: r
+              ? { status: r.status, score: r.score, wrongNumbers: r.wrongNumbers, updatedAt: r.updatedAt.toISOString() }
+              : null,
+          };
+        })
+        .sort((a, b) => a.name.localeCompare(b.name, 'ko')),
     };
   }
 
@@ -89,11 +95,6 @@ export class ExamsService {
     return this.row(id);
   }
 
-  private async row(id: number) {
-    const e = await this.prisma.exam.findUniqueOrThrow({ where: { id }, include: examInclude });
-    return this.toRow(e);
-  }
-
   async remove(id: number) {
     await this.exists(id);
     await this.prisma.exam.delete({ where: { id } });
@@ -103,11 +104,16 @@ export class ExamsService {
   async upsertResult(examId: number, studentId: number, dto: UpsertResultDto) {
     const exam = await this.prisma.exam.findUnique({
       where: { id: examId },
-      select: { total: true, questionCount: true, classId: true },
+      select: { total: true, questionCount: true, classId: true, date: true },
     });
     if (!exam) throw new NotFoundException('시험을 찾을 수 없습니다.');
-    const student = await this.prisma.student.findUnique({ where: { id: studentId }, select: { classId: true } });
-    if (!student || student.classId !== exam.classId)
+    // 응시 대상 기준은 participantIds와 같다: 시험일까지 등록된 반 학생이거나, 이미 결과가 있는 학생.
+    const student = await this.prisma.student.findUnique({
+      where: { id: studentId },
+      select: { classId: true, enrolledAt: true, results: { where: { examId }, select: { id: true } } },
+    });
+    const inClass = student?.classId === exam.classId && student.enrolledAt <= exam.date;
+    if (!student || (!inClass && !student.results.length))
       throw new BadRequestException('이 시험의 응시 대상 학생이 아닙니다.');
 
     const absent = dto.status === 'ABSENT';
@@ -134,6 +140,11 @@ export class ExamsService {
     return { deleted: true };
   }
 
+  private async row(id: number) {
+    const e = await this.prisma.exam.findUniqueOrThrow({ where: { id }, include: examInclude });
+    return this.toRow(e);
+  }
+
   private async exists(id: number) {
     const e = await this.prisma.exam.findUnique({ where: { id }, select: { id: true } });
     if (!e) throw new NotFoundException('시험을 찾을 수 없습니다.');
@@ -156,7 +167,7 @@ export class ExamsService {
       total: e.total,
       questionCount: e.questionCount,
       createdAt: e.createdAt.toISOString(),
-      participantCount: e.class._count.students,
+      participantCount: participantIds(e).size,
       enteredCount: e.results.length,
       absentCount: e.results.filter((r) => r.status === 'ABSENT').length,
       avgScore: avg(scores),
@@ -164,9 +175,4 @@ export class ExamsService {
       minScore: scores.length ? Math.min(...scores) : null,
     };
   }
-}
-
-function nextMonth(month: string) {
-  const [y, m] = month.split('-').map(Number);
-  return new Date(Date.UTC(y, m, 1));
 }

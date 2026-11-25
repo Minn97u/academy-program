@@ -130,7 +130,7 @@ async function main() {
             questionCount: 20,
           },
         });
-        // 첫 시험만 결과를 채워 "분석 완료/입력 중" 상태가 보이게 한다.
+        // 첫 시험만 결과를 채워 "입력 완료/성적 미입력" 상태가 함께 보이게 한다.
         if (ei === 0) {
           for (const [si, s] of students.entries()) {
             const wrong = [3, 7, 12, 18].filter((q) => (q + si) % 3 !== 0);
