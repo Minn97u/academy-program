@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsInt, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
-import { IsDateOnly } from '../../../common/validators/is-date-string';
+import { IsDateOnly } from '../../../common/validators/date';
 
 export class CreateStudentDto {
   @ApiProperty({ example: '김민수' })

@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ExamType } from '@prisma/client';
 import { IsEnum, IsInt, IsNotEmpty, IsString, Max, MaxLength, Min } from 'class-validator';
-import { IsDateOnly } from '../../../common/validators/is-date-string';
+import { IsDateOnly } from '../../../common/validators/date';
 
 export class CreateExamDto {
   @ApiProperty({ example: '11월 3주차 정기 테스트' })

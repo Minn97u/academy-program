@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { toDate, toDateString } from '../../common/lib/date';
+import { monthRange, toDate, toDateString } from '../../common/lib/date';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CalendarAttendanceDto, ListAttendanceDto, UpsertAttendanceDto } from './dto/attendance.dto';
 
@@ -37,12 +37,9 @@ export class AttendanceService {
 
   /** 월별 달력용: 날짜마다 체크된 학생 수. */
   async calendar(query: CalendarAttendanceDto) {
-    const from = toDate(`${query.month}-01`);
-    const [y, m] = query.month.split('-').map(Number);
-    const to = new Date(Date.UTC(y, m, 1));
     const rows = await this.prisma.attendance.groupBy({
       by: ['date'],
-      where: { classId: query.classId, date: { gte: from, lt: to } },
+      where: { classId: query.classId, date: monthRange(query.month) },
       _count: { _all: true },
       orderBy: { date: 'asc' },
     });

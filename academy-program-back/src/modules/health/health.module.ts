@@ -1,14 +1,5 @@
-import { Controller, Get, Module } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
-
-@ApiTags('health')
-@Controller('health')
-class HealthController {
-  @Get()
-  check() {
-    return { ok: true };
-  }
-}
+import { Module } from '@nestjs/common';
+import { HealthController } from './health.controller';
 
 @Module({ controllers: [HealthController] })
 export class HealthModule {}

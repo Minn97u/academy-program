@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsIn, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
-import { IsDateOnly } from '../../../common/validators/is-date-string';
+import { IsDateOnly } from '../../../common/validators/date';
 
 export const NOTE_KINDS = ['상담', '학습', '학부모 연락'] as const;
 
